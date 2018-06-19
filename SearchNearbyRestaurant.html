@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search nearby restaurant</title>
+    <link rel="stylesheet" href="lib/bootstrap-4/css/bootstrap.min.css">
+    <link rel="stylesheet" href="lib/bootstrap-4/css/bootstrap-grid.min.css">
+    <link rel="stylesheet" href="lib/bootstrap-4/css/bootstrap-reboot.min.css">
+    <link rel="stylesheet" href="lib/fontawesome-5/web-fonts-with-css/css/fontawesome-all.min.css">
+    <!--<link rel="stylesheet" href="lib/bootstrap-4/css/style.css">-->
+    <!--<link rel="stylesheet" href="lib/bootstrap-4/css/side.css">-->
+
+    <script type="text/javascript" src="lib/bootstrap-4/js/jquery-3.3.1.min.js  "></script>
+    <!-- Bootstrap Date-Picker Plugin -->
+    <link rel="stylesheet" href="https://formden.com/static/cdn/bootstrap-iso.css" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/js/bootstrap-datepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/css/bootstrap-datepicker3.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script type="text/javascript" src="lib/bootstrap-4/js/bootstrap.min.js  "></script>
+
+    <style>
+
+        #map {
+            height: 700px;
+            width: 860px;
+        }
+
+    </style>
+
+    <script>
+        var map;
+        var infowindow;
+        var radius;
+
+        function initMap(){
+            if (navigator.geolocation){
+                navigator.geolocation.getCurrentPosition(init);
+            }else{
+                alert("Trình duyệt của bạn không hỗ trợ, vui lòng thử lại!");
+            }
+            var selectSearch = document.getElementById('select-search');
+            function radiusNum(){
+                radius = Number(selectSearch.options[selectSearch.selectedIndex].value);
+                return radius;
+            }
+
+            function init(position){
+                var pyrmont = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                var myOptions = {
+                    zoom : 15,
+                    center : pyrmont,
+
+                };
+
+                map = new google.maps.Map(document.getElementById("map"), myOptions);
+
+                var marker = new google.maps.Marker({
+                    position: pyrmont,
+                    map: map,
+                    animation: google.maps.Animation.DROP
+                });
+
+
+                infowindow = new google.maps.InfoWindow();
+                var service = new google.maps.places.PlacesService(map);
+                service.radarSearch({
+                    location: pyrmont,
+                    radius: radiusNum(),
+                    type: ['restaurant']
+                }, callback);
+
+                function callback(results, status) {
+                    if (status !== google.maps.places.PlacesServiceStatus.OK) {
+                        console.error(status);
+                        return;
+                    }
+                    for (var i = 0, result; result = results[i]; i++) {
+                        createMarker(result);
+                    }
+                }
+
+                function createMarker(place) {
+                    var image = 'http://icons.iconarchive.com/icons/artdesigner/webtoys/48/Flag-icon.png';
+                    var placeLoc = place.geometry.location;
+                    var marker = new google.maps.Marker({
+                        map: map,
+                        position: place.geometry.location,
+                        icon: image
+                    });
+
+                    google.maps.event.addListener(marker, 'click', function() {
+
+                        service.getDetails({placeId: place.place_id}, function(result, status) {
+                            if (status !== google.maps.places.PlacesServiceStatus.OK) {
+                                console.error(status);
+                                return;
+                            }
+                            infowindow.setContent('<div><strong>' + result.name + '</strong></br>' +
+                                'Address: ' + result.formatted_address + '</br>' +
+                                'Hot-line: ' + result.international_phone_number +'</br>' +
+                                'Website: ' + result.website + '</br>' +
+                                'Url: ' + result.url + '</br>' +
+                                'Rating: ' + result.rating + '</br>' +
+
+                                '</div>');
+                            infowindow.open(map, marker);
+                        });
+
+                    });
+                }
+                function toggleBounce() {
+                    if (marker.getAnimation() !== null) {
+                        marker.setAnimation(null);
+                    } else {
+                        marker.setAnimation(google.maps.Animation.BOUNCE);
+                    }
+                }
+            }
+        }
+
+    </script>
+
+</head>
+<body>
+
+<div class="container">
+
+    <div class="row col-md-12 justify-content-center mt-5">
+        <div class="form-group col-md-2">
+            <select id="select-search" name="select-search" class="form-control">
+                <option value="1000">1 kilometers</option>
+                <option value="3000">3 kilometers</option>
+                <option value="5000">5 kilometers</option>
+                <option value="8000">8 kilometers</option>
+                <option value="10000">10 kilometers</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button size="5%" type="button" class=" btn btn-secondary" onclick="initMap()">Search</button>
+        </div>
+
+    </div>
+    <div class="row col-md-12 justify-content-center mt-5">
+        <div id="map" ></div>
+    </div>
+
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAIUz_Gv-Yrmak1qBCgMrcPyjMVJTQY_uM&libraries=places&callback=initMap"></script>
+</body>
+</html>
